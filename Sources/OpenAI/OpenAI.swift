@@ -21,18 +21,20 @@ final public class OpenAI: OpenAIProtocol {
         public let organizationIdentifier: String?
         
         /// API host. Set this property if you use some kind of proxy or your own server. Default is api.openai.com
-        public let host: String
+        public let baseUrl: String
+        public let path: String
         public let port: Int
-        public let scheme: String
+        //public let scheme: String
         /// Default request timeout
         public let timeoutInterval: TimeInterval
         
-        public init(token: String, organizationIdentifier: String? = nil, host: String = "api.openai.com", port: Int = 443, scheme: String = "https", timeoutInterval: TimeInterval = 60.0) {
+        public init(token: String, organizationIdentifier: String? = nil, baseUrl: String = "https://api.openai.com", path:String, port: Int = 443, timeoutInterval: TimeInterval = 60.0) {
             self.token = token
             self.organizationIdentifier = organizationIdentifier
-            self.host = host
+            self.baseUrl = baseUrl
+            self.path = path
             self.port = port
-            self.scheme = scheme
+            //self.scheme = scheme
             self.timeoutInterval = timeoutInterval
         }
     }
@@ -43,7 +45,7 @@ final public class OpenAI: OpenAIProtocol {
     public let configuration: Configuration
 
     public convenience init(apiToken: String) {
-        self.init(configuration: Configuration(token: apiToken), session: URLSession.shared)
+        self.init(configuration: Configuration(token: apiToken, path: .chats), session: URLSession.shared)
     }
     
     public convenience init(configuration: Configuration) {
@@ -198,12 +200,19 @@ extension OpenAI {
 extension OpenAI {
     
     func buildURL(path: String) -> URL {
-        var components = URLComponents()
-        components.scheme = configuration.scheme
-        components.host = configuration.host
+        guard var components = URLComponents(string: configuration.baseUrl) else {
+            fatalError("Invalid base URL")
+        }
+        
+        // 设置其他参数
         components.port = configuration.port
-        components.path = path
-        return components.url!
+        components.path = configuration.path
+        
+        guard let url = components.url else {
+            fatalError("Failed to create URL")
+        }
+        
+        return url
     }
 }
 

@@ -22,6 +22,7 @@ final class StreamingSession<ResultType: Codable>: NSObject, Identifiable, URLSe
     var onComplete: ((StreamingSession, Error?) -> Void)?
     
     private let streamingCompletionMarker = "[DONE]"
+    private let openRouterProcessingMarker = ": OPENROUTER PROCESSING"
     private let urlRequest: URLRequest
     private lazy var urlSession: URLSession = {
         let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
@@ -49,6 +50,7 @@ final class StreamingSession<ResultType: Codable>: NSObject, Identifiable, URLSe
             onProcessingError?(self, StreamingError.unknownContent)
             return
         }
+
         processJSON(from: stringContent)
     }
     
@@ -62,6 +64,7 @@ extension StreamingSession {
         }
         let jsonObjects = "\(previousChunkBuffer)\(stringContent)"
             .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: openRouterProcessingMarker, with: "")
             .components(separatedBy: "data:")
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { $0.isEmpty == false }
